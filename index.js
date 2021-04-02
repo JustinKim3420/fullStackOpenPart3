@@ -1,23 +1,45 @@
 const express = require("express");
-const morgan = require('morgan')
+const morgan = require("morgan");
+const cors = require("cors");
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Using middleware to parse JSON requests to objects
 app.use(express.json());
-app.use(morgan((tokens, req, res)=>{
-  morgan.token('body', (req, res)=> {return JSON.stringify(req.body)})
+app.use(cors());
+app.use(
+  morgan((tokens, req, res) => {
+    morgan.token("body", (req, res) => {
+      return JSON.stringify(req.body);
+    });
 
-  return [
-    tokens.method(req, res),
-    tokens.url(req, res),
-    tokens.status(req, res),
-    tokens.res(req, res, 'content-length'), '-',
-    tokens['response-time'](req, res), 'ms',
-    tokens.body(req, res)
-  ].join(' ')
-}))
+    if (req.method === "POST") {
+      return [
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens.res(req, res, "content-length"),
+        "-",
+        tokens["response-time"](req, res),
+        "ms",
+        tokens.body(req, res),
+      ].join(" ");
+    }
+    
+    return[
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, "content-length"),
+      "-",
+      tokens["response-time"](req, res),
+      "ms"
+    ].join(" ");
+  })
+);
+
+app.use(express.static("build"));
 
 let persons = [
   {
@@ -86,8 +108,8 @@ app.post("/api/persons", (request, response) => {
   if (!request.body.number) {
     errors.push("Please enter a number");
   }
-  if(persons.find(person=>person.name===request.body.name)){
-    errors.push("Please enter a unique name")
+  if (persons.find((person) => person.name === request.body.name)) {
+    errors.push("Please enter a unique name");
   }
   // If any errors, send a status and array with errors
   // Return used to prevent an error of "Cannot set headers ..."
@@ -113,7 +135,7 @@ app.delete("/api/persons/:id", (request, response) => {
   if (newPersons.length === persons.length) {
     response.status(404).send("<div>User does not exist</div>");
   } else {
-    console.log(persons);
+    persons = newPersons;
     response.status(204).end();
   }
 });
