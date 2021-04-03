@@ -66,11 +66,6 @@ let persons = [
 
 // Respond to get requests to the /api/persons endpoint
 app.get("/api/persons", (request, response) => {
-  response.send(persons);
-});
-
-// Get a specific user by ID
-app.get("/api/persons", (request, response) => {
   console.log(`Get request made to ${request.url}`);
   response.send(persons);
 });
