@@ -7,15 +7,6 @@ let errors = [];
 if (process.argv.length < 3) {
     errors.push('Please provide the password as an argument: node mongo.js <password>')
 }
-// Checks for name parameter
-if (process.argv.length < 4) {
-    errors.push('Please provide a name')
-}
-
-// Check for phone parameter
-if (process.argv.length < 5) {
-    errors.push('Please provide a phone number')
-}
 
 // If there are any errors, end the process
 if(errors.length>0){
@@ -26,25 +17,36 @@ if(errors.length>0){
 const password = process.argv[2]
 
 const url =
-    `mongodb+srv://fullstack:${password}@cluster0-ostce.mongodb.net/test?retryWrites=true`
+    `mongodb+srv://justinkim3420:${password}@fullstackopen.7xxfg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
 
 const personSchema = new mongoose.Schema({
     name:String,
-    number:string,
+    number:String,
+    id:Number,
     date:Date
 })
 
 const Person = mongoose.model('Person', personSchema)
 
-const note = new Note({
-    content: 'HTML is Easy',
-    date: new Date(),
-    important: true,
+// If the only argument provided is the password log all the data
+if(process.argv.length===3){
+    Person.find({}).then(result=>{
+        console.log('Phonebook:')
+        result.forEach((person)=>{
+            console.log(person.name, person.number)
+        })
+        mongoose.connection.close()
+    })
+}else{
+    const newPerson = new Person({
+    name:process.argv[3],
+    number:process.argv[4],
+    date:new Date()
 })
 
-note.save().then(result => {
-    console.log('note saved!')
+newPerson.save().then(result => {
+    console.log(`added ${newPerson.name} number ${newPerson.number} to phonebook`)
     mongoose.connection.close()
-})
+})}
