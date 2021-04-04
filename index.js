@@ -1,9 +1,9 @@
 require("dotenv").config();
+const errorHandler = require("./errorHandler");
 const Person = require("./models/persons");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const persons = require("./models/persons");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -46,6 +46,7 @@ app.use(
   })
 );
 
+
 // Respond to get requests to the /api/persons endpoint
 app.get("/api/persons", (request, response) => {
   Person.find({}).then((people) => {
@@ -64,44 +65,62 @@ app.get("/info", (request, response) => {
 });
 
 // Get info about a person with a specific ID
-app.get("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
   Person.findById(request.params.id)
     .then((person) => {
-      return response.json(person);
+      response.json(person);
     })
-    .catch((err) => {
-      response.status(404).send("<div>User does not exist</div>");
-    });
+    .catch((error) => next(error));
 });
 
 // Create a new user
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const person = new Person({
     name: request.body.name,
     number: request.body.number,
     date: new Date(),
   });
   person.save().then((result) => {
-    response.send("<div>Person added to phonebook</div>");
-    mongoose.connection.close();
-  });
+    console.log(`added ${person.name} number ${person.number} to phonebook`);
+    response.send(result);
+  }).catch(error => next(error))
 });
 
 // Delete a person with a specific id
-app.delete("/api/persons/:id", (request, response) => {
+app.delete("/api/persons/:id", (request, response, next) => {
   Person.findByIdAndDelete(request.params.id)
     .then((result) => {
       if (result) {
         response.status(204).send("<div>User deleted</div>");
-      }else{
-        response.status(404).send('<div>User does not exist</div>')
+      } else {
+        response.status(404).send("<div>User does not exist</div>");
       }
     })
-    .catch((error) => {
-      console.log(error);
-      next(error);
-    });
+    .catch((error) => next(error));
 });
+
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
+// Handle all request that have an unknown endpoint
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+app.use(errorHandler);
 
 // App is taking requests form port
 app.listen(PORT, () => {
